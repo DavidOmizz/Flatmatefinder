@@ -1,0 +1,206 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Request #{{ req.pk }}{% endblock %}
+{% block page_title %}Request #{{ req.pk }} — {{ req.get_status_display }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .person-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; }
+  .person-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.2rem; }
+  .person-role { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.8rem; }
+  .person-role.seeker { color: var(--info); }
+  .person-role.host { color: var(--accent); }
+  .contact-line { font-size: 0.85rem; margin-bottom: 0.3rem; display: flex; gap: 0.5rem; }
+  .contact-line .label { color: var(--muted); min-width: 55px; font-size: 0.78rem; }
+  .action-panel { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1rem; }
+  .action-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.8rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border); }
+  .action-btn-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:1rem;">
+  <a href="{% url 'dashboard:requests' %}" style="color:var(--muted);font-size:0.85rem;">← Back to requests</a>
+</div>
+
+<!-- STATUS HEADER -->
+<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+  <span class="badge badge-{{ req.status }}" style="font-size:0.85rem;padding:0.4rem 0.9rem;">{{ req.get_status_display }}</span>
+  <span style="color:var(--muted);font-size:0.85rem;">Submitted {{ req.created_at|date:"d M Y, H:i" }}</span>
+  {% if req.connected_at %}<span style="color:var(--accent);font-size:0.85rem;">✅ Connected {{ req.connected_at|date:"d M Y, H:i" }}</span>{% endif %}
+  {% if req.handled_by %}<span style="color:var(--muted);font-size:0.85rem;">Handled by {{ req.handled_by.username }}</span>{% endif %}
+</div>
+
+<div class="grid-2" style="margin-bottom:1rem;">
+
+  <!-- LEFT COLUMN: People + Listing -->
+  <div>
+    <!-- CONTACT REVEAL (only visible to admin) -->
+    {% if req.status == 'connected' %}
+    <div class="contact-reveal" style="margin-bottom:1rem;">
+      <h4>🔗 Connection Details — Share these with both parties</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div>
+          <div style="font-size:0.75rem;font-weight:700;color:var(--muted);margin-bottom:0.5rem;">SEEKER</div>
+          <div class="contact-line"><span class="label">Name</span><strong>{{ req.seeker.get_full_name }}</strong></div>
+          <div class="contact-line"><span class="label">Phone</span><strong>{{ req.seeker_phone }}</strong></div>
+          <div class="contact-line"><span class="label">Email</span>{{ req.seeker.email }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;font-weight:700;color:var(--muted);margin-bottom:0.5rem;">HOST</div>
+          <div class="contact-line"><span class="label">Name</span><strong>{{ req.listing.host.get_full_name }}</strong></div>
+          <div class="contact-line"><span class="label">Phone</span><strong>{{ req.host_phone }}</strong></div>
+          <div class="contact-line"><span class="label">Email</span>{{ req.listing.host.email }}</div>
+        </div>
+      </div>
+      {% if req.agent_fee_charged %}
+      <div style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid #a7f3d0;display:flex;align-items:center;gap:1rem;">
+        <span style="font-size:0.85rem;">Agent Fee: <strong>₦{{ req.agent_fee_charged|floatformat:0 }}</strong></span>
+        {% if req.fee_paid %}
+          <span style="color:var(--accent);font-weight:600;font-size:0.85rem;">✅ Paid</span>
+        {% else %}
+          <span style="color:var(--warning);font-weight:600;font-size:0.85rem;">⚠️ Not yet paid</span>
+          <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <button name="action" value="mark_fee_paid" class="btn btn-sm btn-primary">Mark as Paid</button>
+          </form>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- SEEKER CARD -->
+    <div class="person-card" style="margin-bottom:1rem;">
+      <div class="person-role seeker">👤 Seeker</div>
+      <div class="person-name">{{ req.seeker.get_full_name|default:req.seeker.username }}</div>
+      <div class="contact-line"><span class="label">📱 Phone</span><strong>{{ req.seeker_phone }}</strong></div>
+      <div class="contact-line"><span class="label">✉️ Email</span>{{ req.seeker.email }}</div>
+      <div class="contact-line"><span class="label">🆔 User</span>@{{ req.seeker.username }}</div>
+      {% if req.seeker.bio %}<div style="margin-top:0.5rem;font-size:0.82rem;color:var(--muted);">{{ req.seeker.bio }}</div>{% endif %}
+      <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border);">
+        <div style="font-size:0.75rem;font-weight:600;color:var(--muted);margin-bottom:0.3rem;">Their message:</div>
+        <div style="font-size:0.85rem;background:var(--bg);padding:0.7rem;border-radius:6px;">{{ req.message }}</div>
+      </div>
+    </div>
+
+    <!-- HOST CARD -->
+    <div class="person-card" style="margin-bottom:1rem;">
+      <div class="person-role host">🏠 Host</div>
+      <div class="person-name">{{ req.listing.host.get_full_name|default:req.listing.host.username }}</div>
+      <div class="contact-line"><span class="label">📱 Phone</span><strong>{{ req.host_phone }}</strong></div>
+      <div class="contact-line"><span class="label">✉️ Email</span>{{ req.listing.host.email }}</div>
+      {% if req.listing.host.bio %}<div style="margin-top:0.5rem;font-size:0.82rem;color:var(--muted);">{{ req.listing.host.bio }}</div>{% endif %}
+    </div>
+
+    <!-- LISTING SUMMARY -->
+    <div class="person-card">
+      <div class="person-role" style="color:var(--muted);">📋 Listing</div>
+      <div class="person-name"><a href="{% url 'listings:detail' req.listing.pk %}" target="_blank" style="color:var(--info);">{{ req.listing.title }}</a></div>
+      <div class="contact-line"><span class="label">📍</span>{{ req.listing.address }}, {{ req.listing.city }}</div>
+      <div class="contact-line"><span class="label">💰</span><strong>₦{{ req.listing.monthly_rent|floatformat:0 }}/month</strong></div>
+      <div class="contact-line"><span class="label">🛏️</span>{{ req.listing.get_room_type_display }} · {{ req.listing.get_furnished_display }}</div>
+      <div class="contact-line"><span class="label">👥</span>{{ req.listing.spots_left }} spot{{ req.listing.spots_left|pluralize }} left</div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: Actions + Log -->
+  <div>
+
+    <!-- ACTION PANEL -->
+    {% if req.status == 'pending' %}
+    <div class="action-panel" style="border-color:var(--warning);">
+      <div class="action-title">⏳ This request needs your attention</div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Internal Note (optional)</label>
+          <textarea name="note" class="form-control" rows="2" placeholder="e.g. Called seeker, sounds good. Calling host next..."></textarea>
+        </div>
+        <div class="action-btn-grid">
+          <button name="action" value="start_review" class="btn btn-info">🔍 Start Reviewing</button>
+          <button name="action" value="decline" class="btn btn-danger" onclick="return confirm('Decline this request?')">✗ Decline</button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if req.status == 'reviewing' %}
+    <div class="action-panel" style="border-color:var(--info);">
+      <div class="action-title">🔍 You're reviewing this — ready to connect?</div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Agent Fee to Charge (₦)</label>
+          <input type="number" name="agent_fee_charged" class="form-control" placeholder="e.g. 10000" value="{{ req.agent_fee_charged|default:'' }}">
+          <small style="color:var(--muted);font-size:0.75rem;">Leave blank if not charging a fee</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Note (shown in activity log)</label>
+          <textarea name="note" class="form-control" rows="2" placeholder="e.g. Both parties confirmed interest. Sharing contacts now."></textarea>
+        </div>
+        <div class="action-btn-grid">
+          <button name="action" value="connect" class="btn btn-primary">✅ Connect Both Parties</button>
+          <button name="action" value="decline" class="btn btn-danger" onclick="return confirm('Decline this request?')">✗ Decline</button>
+        </div>
+      </form>
+      <p style="font-size:0.75rem;color:var(--muted);margin-top:0.8rem;">⚠️ Clicking "Connect" will reveal both contacts to you above. You then manually share them via WhatsApp, call, or email.</p>
+    </div>
+    {% endif %}
+
+    {% if req.status == 'connected' and not req.fee_paid %}
+    <div class="action-panel" style="border-color:var(--warning);">
+      <div class="action-title">💰 Fee Outstanding</div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.8rem;">Agent fee of ₦{{ req.agent_fee_charged|floatformat:0 }} has not been marked as paid yet.</p>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Note</label>
+          <input type="text" name="note" class="form-control" placeholder="e.g. Received via bank transfer">
+        </div>
+        <button name="action" value="mark_fee_paid" class="btn btn-primary">✅ Mark Fee as Paid</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- CLOSE / ADD NOTE -->
+    <div class="action-panel">
+      <div class="action-title">📝 Add Note / Change Status</div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Note</label>
+          <textarea name="note" class="form-control" rows="2" placeholder="Add an internal note...">{{ req.admin_note|default:'' }}</textarea>
+        </div>
+        <div class="action-btn-grid">
+          <button name="action" value="add_note" class="btn btn-secondary">💾 Save Note</button>
+          {% if req.status not in 'closed,declined' %}
+          <button name="action" value="close" class="btn btn-secondary" onclick="return confirm('Close this request?')">🔒 Close</button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+
+    <!-- ACTIVITY LOG -->
+    <div class="card">
+      <div class="card-header"><h3>📋 Activity Log</h3></div>
+      <div class="card-body">
+        {% if activity_log %}
+        <div class="timeline">
+          {% for log in activity_log %}
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-action">{{ log.action }}</div>
+            <div class="timeline-meta">{{ log.admin_user.username }} · {{ log.timestamp|date:"d M Y, H:i" }}</div>
+            {% if log.note %}<div class="timeline-note">{{ log.note }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;color:var(--muted);padding:1rem;font-size:0.85rem;">No activity yet</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

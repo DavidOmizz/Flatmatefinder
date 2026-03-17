@@ -1,0 +1,83 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}All Requests{% endblock %}
+{% block page_title %}All Requests{% endblock %}
+
+{% block content %}
+
+<!-- STATUS FILTER TABS -->
+<div style="display:flex;gap:0.5rem;margin-bottom:1.2rem;flex-wrap:wrap;">
+  {% for key, label, count in status_tabs %}
+  {% endfor %}
+  <a href="?{% if search_q %}q={{ search_q }}&{% endif %}" class="btn {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">All ({{ status_counts.all }})</a>
+  <a href="?status=pending{% if search_q %}&q={{ search_q }}{% endif %}" class="btn {% if status_filter == 'pending' %}btn-warning{% else %}btn-secondary{% endif %} btn-sm">⏳ Pending ({{ status_counts.pending }})</a>
+  <a href="?status=reviewing{% if search_q %}&q={{ search_q }}{% endif %}" class="btn {% if status_filter == 'reviewing' %}btn-info{% else %}btn-secondary{% endif %} btn-sm">🔍 Reviewing ({{ status_counts.reviewing }})</a>
+  <a href="?status=connected{% if search_q %}&q={{ search_q }}{% endif %}" class="btn {% if status_filter == 'connected' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">✅ Connected ({{ status_counts.connected }})</a>
+  <a href="?status=closed{% if search_q %}&q={{ search_q }}{% endif %}" class="btn btn-secondary btn-sm">🔒 Closed ({{ status_counts.closed }})</a>
+  <a href="?status=declined{% if search_q %}&q={{ search_q }}{% endif %}" class="btn btn-secondary btn-sm">✗ Declined ({{ status_counts.declined }})</a>
+</div>
+
+<!-- SEARCH -->
+<form method="get" style="margin-bottom:1rem;display:flex;gap:0.5rem;">
+  {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+  <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search by seeker name, listing, city..." style="max-width:360px;">
+  <button type="submit" class="btn btn-secondary">Search</button>
+  {% if search_q %}<a href="?{% if status_filter %}status={{ status_filter }}{% endif %}" class="btn btn-secondary">Clear</a>{% endif %}
+</form>
+
+<!-- TABLE -->
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Seeker</th>
+          <th>Seeker Phone</th>
+          <th>Listing</th>
+          <th>Host</th>
+          <th>Host Phone</th>
+          <th>City</th>
+          <th>Rent</th>
+          <th>Status</th>
+          <th>Fee</th>
+          <th>Submitted</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td style="color:var(--muted);">{{ req.pk }}</td>
+          <td>
+            <strong>{{ req.seeker.get_full_name|default:req.seeker.username }}</strong>
+          </td>
+          <td>
+            <strong>{{ req.seeker.phone|default:"—" }}</strong>
+          </td>
+          <td style="max-width:180px;">
+            <a href="{% url 'listings:detail' req.listing.pk %}" target="_blank" style="color:var(--info);">
+              {{ req.listing.title|truncatechars:35 }}
+            </a>
+          </td>
+          <td>{{ req.listing.host.get_full_name|default:req.listing.host.username }}</td>
+          <td><strong>{{ req.listing.host.phone|default:"—" }}</strong></td>
+          <td>{{ req.listing.city }}</td>
+          <td>₦{{ req.listing.monthly_rent|floatformat:0 }}</td>
+          <td><span class="badge badge-{{ req.status }}">{{ req.get_status_display }}</span></td>
+          <td>
+            {% if req.agent_fee_charged %}
+              ₦{{ req.agent_fee_charged|floatformat:0 }}
+              {% if req.fee_paid %}<span style="color:var(--accent);font-size:0.7rem;">✓</span>{% else %}<span style="color:var(--warning);font-size:0.7rem;">⚠</span>{% endif %}
+            {% else %}—{% endif %}
+          </td>
+          <td style="white-space:nowrap;color:var(--muted);">{{ req.created_at|date:"d M Y" }}</td>
+          <td><a href="{% url 'dashboard:request_detail' req.pk %}" class="btn btn-sm btn-primary">Open →</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="12" style="text-align:center;padding:2.5rem;color:var(--muted);">No requests found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

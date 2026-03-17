@@ -1,0 +1,155 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Overview{% endblock %}
+
+{% block content %}
+
+<!-- STAT CARDS -->
+<div class="stats-grid">
+  <div class="stat-card orange">
+    <div class="stat-label">⏳ Needs Action</div>
+    <div class="stat-num">{{ stats.pending_requests }}</div>
+    <div class="stat-sub">Pending requests</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="stat-label">🔍 In Progress</div>
+    <div class="stat-num">{{ stats.reviewing_requests }}</div>
+    <div class="stat-sub">Under review</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">✅ Connected</div>
+    <div class="stat-num">{{ stats.connected_requests }}</div>
+    <div class="stat-sub">Successful matches</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">📩 Total Requests</div>
+    <div class="stat-num">{{ stats.total_requests }}</div>
+    <div class="stat-sub">{{ stats.new_requests_7d }} this week</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">🏠 Active Listings</div>
+    <div class="stat-num">{{ stats.active_listings }}</div>
+    <div class="stat-sub">of {{ stats.total_listings }} total</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">👥 Total Users</div>
+    <div class="stat-num">{{ stats.total_users }}</div>
+    <div class="stat-sub">+{{ stats.new_users_7d }} this week</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">💰 Fees Collected</div>
+    <div class="stat-num" style="font-size:1.4rem;">₦{{ stats.fees_collected|floatformat:0 }}</div>
+    <div class="stat-sub">Total agent fees paid</div>
+  </div>
+  <div class="stat-card orange">
+    <div class="stat-label">💸 Fees Outstanding</div>
+    <div class="stat-num" style="font-size:1.4rem;">₦{{ stats.fees_pending|floatformat:0 }}</div>
+    <div class="stat-sub">Connected, unpaid</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- URGENT: NEEDS ACTION -->
+  <div class="card">
+    <div class="card-header">
+      <h3>⏳ Requests Needing Action</h3>
+      <a href="{% url 'dashboard:requests' %}?status=pending" class="btn btn-sm btn-secondary">View all</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Seeker</th>
+            <th>Listing</th>
+            <th>City</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in urgent %}
+          <tr>
+            <td>
+              <strong>{{ req.seeker.get_full_name|default:req.seeker.username }}</strong><br>
+              <span style="font-size:0.75rem;color:var(--muted);">{{ req.seeker.phone|default:"No phone" }}</span>
+            </td>
+            <td style="max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ req.listing.title }}</td>
+            <td>{{ req.listing.city }}</td>
+            <td><span class="badge badge-{{ req.status }}">{{ req.get_status_display }}</span></td>
+            <td><a href="{% url 'dashboard:request_detail' req.pk %}" class="btn btn-sm btn-primary">Handle →</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">🎉 All caught up!</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RECENT CONNECTIONS -->
+  <div class="card">
+    <div class="card-header">
+      <h3>✅ Recent Connections Made</h3>
+      <a href="{% url 'dashboard:requests' %}?status=connected" class="btn btn-sm btn-secondary">View all</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Seeker</th>
+            <th>Host</th>
+            <th>Listing</th>
+            <th>Fee</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in recent_connections %}
+          <tr>
+            <td><strong>{{ req.seeker.get_full_name|default:req.seeker.username }}</strong></td>
+            <td>{{ req.listing.host.get_full_name|default:req.listing.host.username }}</td>
+            <td style="font-size:0.78rem;color:var(--muted);">{{ req.listing.city }}</td>
+            <td>
+              {% if req.agent_fee_charged %}
+                ₦{{ req.agent_fee_charged|floatformat:0 }}
+                {% if req.fee_paid %}<span style="color:var(--accent);font-size:0.7rem;">✓ paid</span>{% else %}<span style="color:var(--warning);font-size:0.7rem;">unpaid</span>{% endif %}
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem;">No connections yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- HOT LISTINGS -->
+<div class="card" style="margin-top:1rem;">
+  <div class="card-header">
+    <h3>🔥 Most Requested Listings</h3>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Listing</th><th>Host</th><th>City</th><th>Price</th><th>Total Requests</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for listing in hot_listings %}
+        <tr>
+          <td><a href="{% url 'listings:detail' listing.pk %}" target="_blank" style="color:var(--info);">{{ listing.title|truncatechars:45 }}</a></td>
+          <td>{{ listing.host.get_full_name|default:listing.host.username }}</td>
+          <td>{{ listing.city }}</td>
+          <td>₦{{ listing.monthly_rent|floatformat:0 }}</td>
+          <td><strong>{{ listing.req_count }}</strong></td>
+          <td><span class="badge badge-{{ listing.status }}">{{ listing.get_status_display }}</span></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);">No listings yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

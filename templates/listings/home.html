@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% block title %}FlatFinder — Find Your Perfect Flatmate{% endblock %}
+
+{% block extra_head %}
+<style>
+  .hero {
+    background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 60%, var(--green-light) 100%);
+    color: white;
+    padding: 6rem 0 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -5%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 50%;
+  }
+  .hero-content { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+  .hero-eyebrow { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; margin-bottom: 1rem; }
+  .hero h1 { font-family: 'Fraunces', serif; font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 500; line-height: 1.15; margin-bottom: 1.2rem; max-width: 700px; }
+  .hero h1 em { font-style: italic; opacity: 0.85; }
+  .hero p { font-size: 1.1rem; opacity: 0.85; max-width: 520px; margin-bottom: 2rem; }
+  .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn-hero-primary { background: white; color: var(--green-dark); font-weight: 600; padding: 0.9rem 2rem; border-radius: 10px; font-size: 1rem; }
+  .btn-hero-primary:hover { background: var(--cream); }
+  .btn-hero-outline { border: 2px solid rgba(255,255,255,0.5); color: white; padding: 0.9rem 2rem; border-radius: 10px; font-size: 1rem; }
+  .btn-hero-outline:hover { border-color: white; background: rgba(255,255,255,0.08); }
+  .hero-stats { display: flex; gap: 2.5rem; margin-top: 3rem; flex-wrap: wrap; }
+  .hero-stat-num { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 700; }
+  .hero-stat-label { font-size: 0.8rem; opacity: 0.7; }
+
+  .cities-strip { background: var(--sand); padding: 1.2rem 0; border-bottom: 1px solid var(--border); overflow: hidden; }
+  .cities-inner { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; }
+  .city-tag { padding: 0.35rem 1rem; background: white; border: 1px solid var(--border); border-radius: 100px; font-size: 0.82rem; color: var(--muted); transition: all 0.2s; }
+  .city-tag:hover { border-color: var(--green); color: var(--green); }
+  .cities-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-right: 0.5rem; }
+
+  .how-it-works { background: white; }
+  .steps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2rem; }
+  .step-card { text-align: center; padding: 2rem 1.5rem; }
+  .step-icon { width: 60px; height: 60px; background: var(--green-pale); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.2rem; }
+  .step-num { font-size: 0.75rem; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+  .step-title { font-family: 'Fraunces', serif; font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .step-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.5; }
+
+  .cta-section { background: var(--green); color: white; padding: 5rem 0; text-align: center; }
+  .cta-section h2 { font-family: 'Fraunces', serif; font-size: 2.2rem; font-weight: 500; margin-bottom: 0.8rem; }
+  .cta-section p { opacity: 0.85; max-width: 500px; margin: 0 auto 2rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">🏠 Find your people, find your place</div>
+    <h1>Share a flat, <em>not</em> the full rent bill.</h1>
+    <p>Browse thousands of rooms and flatmate listings. Find people who match your lifestyle, budget, and vibe.</p>
+    <div class="hero-actions">
+      <a href="{% url 'listings:list' %}" class="btn btn-hero-primary">Browse Listings</a>
+      {% if not user.is_authenticated %}
+      <a href="{% url 'accounts:register' %}" class="btn btn-hero-outline">Post Your Space</a>
+      {% else %}
+      <a href="{% url 'listings:create' %}" class="btn btn-hero-outline">Post Your Space</a>
+      {% endif %}
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num">{{ total_listings }}+</div>
+        <div class="hero-stat-label">Active Listings</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">{{ total_cities }}+</div>
+        <div class="hero-stat-label">Cities</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">100%</div>
+        <div class="hero-stat-label">Free to Browse</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CITIES STRIP -->
+{% if cities %}
+<div class="cities-strip">
+  <div class="cities-inner">
+    <span class="cities-label">Browse by city:</span>
+    {% for city in cities %}
+    <a href="{% url 'listings:list' %}?city={{ city }}" class="city-tag">{{ city }}</a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- FEATURED LISTINGS -->
+{% if featured %}
+<section class="section" style="background: var(--cream);">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem;">
+      <div>
+        <div class="section-title">Featured Listings</div>
+        <div class="section-subtitle" style="margin-bottom:0">Most viewed spaces right now</div>
+      </div>
+      <a href="{% url 'listings:list' %}" class="btn btn-outline">View all →</a>
+    </div>
+    <div class="listings-grid">
+      {% for listing in featured %}
+      <a href="{{ listing.get_absolute_url }}" class="listing-card" style="color:inherit;">
+        <div class="listing-card-img">
+          {% if listing.images.first %}
+            <img src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}">
+          {% else %}
+            <div class="listing-card-img-placeholder">🏠</div>
+          {% endif %}
+          <div style="position:absolute; top:0.7rem; left:0.7rem;">
+            <span class="badge badge-green">{{ listing.get_room_type_display }}</span>
+          </div>
+        </div>
+        <div class="listing-card-body">
+          <div class="listing-card-title">{{ listing.title }}</div>
+          <div class="listing-card-location">📍 {{ listing.address }}, {{ listing.city }}</div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+            {% if listing.has_wifi %}<span class="chip">📶 WiFi</span>{% endif %}
+            {% if listing.has_ac %}<span class="chip">❄️ AC</span>{% endif %}
+            {% if listing.pets_allowed %}<span class="chip">🐾 Pets OK</span>{% endif %}
+          </div>
+          <div class="listing-card-price">
+            ₦{{ listing.monthly_rent|floatformat:0 }}
+            <small>/month{% if listing.utilities_included %} (utilities incl.){% endif %}</small>
+          </div>
+        </div>
+        <div class="listing-card-footer">
+          <span>👥 {{ listing.spots_left }} spot{{ listing.spots_left|pluralize }} left</span>
+          <span>{{ listing.get_furnished_display }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- HOW IT WORKS -->
+<section class="section how-it-works">
+  <div class="container">
+    <div style="text-align:center; margin-bottom:3rem;">
+      <div class="section-title">How FlatFinder Works</div>
+      <div class="section-subtitle">Three simple steps to find your perfect flat</div>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-icon">🔍</div>
+        <div class="step-num">Step 01</div>
+        <div class="step-title">Browse Listings</div>
+        <div class="step-desc">Search by city, price, room type, and preferences to find spaces that match your needs.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">💬</div>
+        <div class="step-num">Step 02</div>
+        <div class="step-title">Contact the Host</div>
+        <div class="step-desc">Send a message to introduce yourself. Hosts can accept or decline your request.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">🤝</div>
+        <div class="step-num">Step 03</div>
+        <div class="step-title">Move In</div>
+        <div class="step-desc">Arrange a viewing, agree on terms, and start your new chapter with great flatmates.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-icon">🏡</div>
+        <div class="step-num">For Hosts</div>
+        <div class="step-title">Post Your Space</div>
+        <div class="step-desc">List your spare room or apartment. Set your price, house rules, and who you're looking for.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LATEST LISTINGS -->
+{% if latest %}
+<section class="section" style="background: var(--sand);">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2rem;">
+      <div>
+        <div class="section-title">Newly Listed</div>
+        <div class="section-subtitle" style="margin-bottom:0">Fresh spaces just posted</div>
+      </div>
+      <a href="{% url 'listings:list' %}?sort=newest" class="btn btn-outline">See more →</a>
+    </div>
+    <div class="listings-grid">
+      {% for listing in latest %}
+      <a href="{{ listing.get_absolute_url }}" class="listing-card" style="color:inherit;">
+        <div class="listing-card-img">
+          {% if listing.images.first %}
+            <img src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}">
+          {% else %}
+            <div class="listing-card-img-placeholder">🏠</div>
+          {% endif %}
+        </div>
+        <div class="listing-card-body">
+          <div class="listing-card-title">{{ listing.title }}</div>
+          <div class="listing-card-location">📍 {{ listing.city }}, {{ listing.state }}</div>
+          <div class="listing-card-price">₦{{ listing.monthly_rent|floatformat:0 }}<small>/month</small></div>
+        </div>
+        <div class="listing-card-footer">
+          <span>{{ listing.get_room_type_display }}</span>
+          <span style="color:var(--green)">NEW</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Have a space to share?</h2>
+    <p>Post your listing for free and connect with thousands of people looking for a flatmate.</p>
+    {% if user.is_authenticated %}
+    <a href="{% url 'listings:create' %}" class="btn btn-hero-primary">Post a Listing</a>
+    {% else %}
+    <a href="{% url 'accounts:register' %}" class="btn btn-hero-primary">Get Started — It's Free</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

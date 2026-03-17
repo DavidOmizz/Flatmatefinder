@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block title %}Browse Listings — FlatFinder{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-header { background: var(--green-dark); color: white; padding: 2.5rem 0; }
+  .page-header h1 { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 500; }
+  .page-header p { opacity: 0.7; margin-top: 0.3rem; }
+
+  .browse-layout { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; padding: 2rem 0; }
+  @media (max-width: 900px) { .browse-layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  .sidebar { position: sticky; top: 80px; height: fit-content; }
+  .filter-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; }
+  .filter-title { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; }
+  .filter-divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+  .results-count { font-weight: 600; }
+  .sort-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .sort-btn { padding: 0.4rem 0.9rem; border-radius: 100px; font-size: 0.8rem; border: 1.5px solid var(--border); background: white; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; color: var(--text); text-decoration: none; }
+  .sort-btn.active { background: var(--green); border-color: var(--green); color: white; }
+  .sort-btn:hover:not(.active) { border-color: var(--green); color: var(--green); }
+
+  .empty-state { text-align: center; padding: 4rem 2rem; }
+  .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+  .empty-state h3 { font-family: 'Fraunces', serif; font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .empty-state p { color: var(--muted); margin-bottom: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Browse Listings</h1>
+    <p>{{ total }} available space{{ total|pluralize }} found</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="browse-layout">
+    <!-- SIDEBAR FILTERS -->
+    <aside class="sidebar">
+      <form method="get" class="filter-card">
+        <div class="filter-title">🔍 Filters</div>
+
+        <div class="form-group">
+          <label class="form-label">Search</label>
+          <input type="text" name="q" value="{{ form.q.value|default:'' }}" class="form-control" placeholder="City, area, keyword...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">City</label>
+          <input type="text" name="city" value="{{ form.city.value|default:'' }}" class="form-control" placeholder="e.g. Lagos">
+        </div>
+
+        <hr class="filter-divider">
+
+        <div class="form-group">
+          <label class="form-label">Price Range (₦/month)</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+            <input type="number" name="min_price" value="{{ form.min_price.value|default:'' }}" class="form-control" placeholder="Min">
+            <input type="number" name="max_price" value="{{ form.max_price.value|default:'' }}" class="form-control" placeholder="Max">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Room Type</label>
+          <select name="room_type" class="form-control">
+            {{ form.room_type }}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Furnished</label>
+          <select name="furnished" class="form-control">
+            {{ form.furnished }}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Gender Preference</label>
+          <select name="gender_preference" class="form-control">
+            {{ form.gender_preference }}
+          </select>
+        </div>
+
+        <hr class="filter-divider">
+
+        <div class="filter-title">Amenities</div>
+        <div class="form-check">
+          <input type="checkbox" name="has_wifi" id="wifi" {% if form.has_wifi.value %}checked{% endif %}>
+          <label for="wifi">WiFi included</label>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" name="has_parking" id="parking" {% if form.has_parking.value %}checked{% endif %}>
+          <label for="parking">Parking available</label>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" name="pets_allowed" id="pets" {% if form.pets_allowed.value %}checked{% endif %}>
+          <label for="pets">Pets allowed</label>
+        </div>
+
+        <div style="margin-top:1.2rem; display:flex; gap:0.5rem;">
+          <button type="submit" class="btn btn-primary" style="flex:1">Apply</button>
+          <a href="{% url 'listings:list' %}" class="btn btn-outline">Clear</a>
+        </div>
+      </form>
+    </aside>
+
+    <!-- RESULTS -->
+    <div>
+      <div class="results-header">
+        <span class="results-count">{{ total }} result{{ total|pluralize }}</span>
+        <div class="sort-bar">
+          <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}sort=newest" class="sort-btn {% if current_sort == 'newest' or not current_sort %}active{% endif %}">Newest</a>
+          <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}sort=price_asc" class="sort-btn {% if current_sort == 'price_asc' %}active{% endif %}">Price ↑</a>
+          <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}sort=price_desc" class="sort-btn {% if current_sort == 'price_desc' %}active{% endif %}">Price ↓</a>
+          <a href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}sort=popular" class="sort-btn {% if current_sort == 'popular' %}active{% endif %}">Popular</a>
+        </div>
+      </div>
+
+      {% if listings %}
+      <div class="listings-grid">
+        {% for listing in listings %}
+        <a href="{{ listing.get_absolute_url }}" class="listing-card" style="color:inherit;">
+          <div class="listing-card-img">
+            {% if listing.images.first %}
+              <img src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}">
+            {% else %}
+              <div class="listing-card-img-placeholder">🏠</div>
+            {% endif %}
+            <div style="position:absolute; top:0.7rem; left:0.7rem;">
+              <span class="badge badge-green">{{ listing.get_room_type_display }}</span>
+            </div>
+            {% if listing.status != 'available' %}
+            <div style="position:absolute; top:0.7rem; right:0.7rem;">
+              <span class="badge badge-red">{{ listing.get_status_display }}</span>
+            </div>
+            {% endif %}
+          </div>
+          <div class="listing-card-body">
+            <div class="listing-card-title">{{ listing.title }}</div>
+            <div class="listing-card-location">📍 {{ listing.address }}, {{ listing.city }}</div>
+            <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.7rem;">
+              {% if listing.has_wifi %}<span class="chip" style="padding:0.2rem 0.6rem; font-size:0.72rem;">📶 WiFi</span>{% endif %}
+              {% if listing.has_ac %}<span class="chip" style="padding:0.2rem 0.6rem; font-size:0.72rem;">❄️ AC</span>{% endif %}
+              {% if listing.pets_allowed %}<span class="chip" style="padding:0.2rem 0.6rem; font-size:0.72rem;">🐾 Pets</span>{% endif %}
+              {% if listing.utilities_included %}<span class="chip" style="padding:0.2rem 0.6rem; font-size:0.72rem;">💡 Bills incl.</span>{% endif %}
+            </div>
+            <div class="listing-card-price">
+              ₦{{ listing.monthly_rent|floatformat:0 }}<small>/month</small>
+            </div>
+          </div>
+          <div class="listing-card-footer">
+            <span>👥 {{ listing.spots_left }} spot{{ listing.spots_left|pluralize }} left</span>
+            <span>{{ listing.get_furnished_display }}</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">🏚️</div>
+        <h3>No listings found</h3>
+        <p>Try adjusting your filters or search terms.</p>
+        <a href="{% url 'listings:list' %}" class="btn btn-primary">Clear filters</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

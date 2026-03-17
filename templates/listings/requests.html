@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}My Requests — FlatFinder{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-header { background: var(--green-dark); color: white; padding: 2.5rem 0; }
+  .page-header h1 { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 500; }
+  .tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 2rem; }
+  .tab { padding: 0.8rem 1.5rem; font-weight: 600; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; }
+  .tab.active { color: var(--green); border-bottom-color: var(--green); }
+  .request-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.2rem 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
+  .request-info { flex: 1; }
+  .request-title { font-weight: 600; margin-bottom: 0.2rem; }
+  .request-meta { font-size: 0.82rem; color: var(--muted); }
+  .request-message { font-size: 0.85rem; color: var(--text); margin-top: 0.5rem; padding: 0.6rem 0.9rem; background: var(--cream); border-radius: 8px; }
+  .request-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>My Requests</h1>
+  </div>
+</div>
+
+<div class="container" style="padding-top:2rem; padding-bottom:4rem;">
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('received')">📩 Received ({{ received.count }})</div>
+    <div class="tab" onclick="showTab('sent')">📤 Sent ({{ sent.count }})</div>
+  </div>
+
+  <!-- RECEIVED -->
+  <div id="tab-received">
+    {% if received %}
+      {% for req in received %}
+      <div class="request-card">
+        <img src="{{ req.sender.get_avatar_url }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+        <div class="request-info">
+          <div class="request-title">{{ req.sender.get_full_name|default:req.sender.username }}</div>
+          <div class="request-meta">
+            For: <a href="{{ req.listing.get_absolute_url }}" style="color:var(--green);">{{ req.listing.title }}</a> · {{ req.created_at|date:"d M Y" }}
+          </div>
+          <div class="request-message">{{ req.message }}</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
+          <span class="badge {% if req.status == 'accepted' %}badge-green{% elif req.status == 'declined' %}badge-red{% else %}badge-orange{% endif %}">
+            {{ req.get_status_display }}
+          </span>
+          {% if req.status == 'pending' %}
+          <div class="request-actions">
+            <a href="{% url 'listings:update_request' req.pk 'accepted' %}" class="btn btn-primary btn-sm">Accept</a>
+            <a href="{% url 'listings:update_request' req.pk 'declined' %}" class="btn btn-danger btn-sm">Decline</a>
+          </div>
+          {% endif %}
+          {% if req.sender.phone %}
+          <a href="tel:{{ req.sender.phone }}" style="font-size:0.82rem; color:var(--green);">📞 {{ req.sender.phone }}</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align:center; padding:4rem; color:var(--muted);">
+        <div style="font-size:3rem; margin-bottom:1rem;">📭</div>
+        <div>No requests received yet. Your listing will start getting attention soon!</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- SENT -->
+  <div id="tab-sent" style="display:none;">
+    {% if sent %}
+      {% for req in sent %}
+      <div class="request-card">
+        <div class="listing-card-img" style="width:80px;height:60px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--sand);">
+          {% if req.listing.images.first %}
+            <img src="{{ req.listing.images.first.image.url }}" style="width:100%;height:100%;object-fit:cover;">
+          {% else %}
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🏠</div>
+          {% endif %}
+        </div>
+        <div class="request-info">
+          <div class="request-title"><a href="{{ req.listing.get_absolute_url }}" style="color:var(--green);">{{ req.listing.title }}</a></div>
+          <div class="request-meta">📍 {{ req.listing.city }} · ₦{{ req.listing.monthly_rent|floatformat:0 }}/month · Sent {{ req.created_at|date:"d M Y" }}</div>
+          <div class="request-message">{{ req.message }}</div>
+        </div>
+        <div>
+          <span class="badge {% if req.status == 'accepted' %}badge-green{% elif req.status == 'declined' %}badge-red{% else %}badge-orange{% endif %}">
+            {{ req.get_status_display }}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align:center; padding:4rem; color:var(--muted);">
+        <div style="font-size:3rem; margin-bottom:1rem;">📤</div>
+        <div>You haven't sent any requests yet. <a href="{% url 'listings:list' %}" style="color:var(--green);">Browse listings</a></div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function showTab(name) {
+  document.getElementById('tab-received').style.display = name === 'received' ? 'block' : 'none';
+  document.getElementById('tab-sent').style.display = name === 'sent' ? 'block' : 'none';
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && name === 'received') || (i === 1 && name === 'sent'));
+  });
+}
+</script>
+{% endblock %}

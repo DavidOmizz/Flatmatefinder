@@ -1,0 +1,41 @@
+{% extends 'dashboard/base.html' %}
+{% block title %}Listings{% endblock %}
+{% block page_title %}All Listings{% endblock %}
+
+{% block content %}
+<div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+  <a href="?" class="btn {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">All</a>
+  <a href="?status=available" class="btn {% if status_filter == 'available' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Available</a>
+  <a href="?status=taken" class="btn {% if status_filter == 'taken' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Taken</a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Title</th><th>Host</th><th>City</th><th>Rent</th><th>Type</th><th>Requests</th><th>Pending</th><th>Status</th><th>Posted</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for listing in listings %}
+        <tr>
+          <td style="max-width:200px;"><a href="{% url 'listings:detail' listing.pk %}" target="_blank" style="color:var(--info);">{{ listing.title|truncatechars:40 }}</a></td>
+          <td>{{ listing.host.get_full_name|default:listing.host.username }}<br><small style="color:var(--muted);">{{ listing.host.phone|default:"" }}</small></td>
+          <td>{{ listing.city }}</td>
+          <td>₦{{ listing.monthly_rent|floatformat:0 }}</td>
+          <td>{{ listing.get_room_type_display }}</td>
+          <td><strong>{{ listing.req_count }}</strong></td>
+          <td>{% if listing.pending_count %}<span style="color:var(--warning);font-weight:600;">{{ listing.pending_count }}</span>{% else %}0{% endif %}</td>
+          <td><span class="badge badge-{{ listing.status }}">{{ listing.get_status_display }}</span></td>
+          <td style="color:var(--muted);">{{ listing.created_at|date:"d M Y" }}</td>
+          <td>
+            <a href="{% url 'dashboard:requests' %}?q={{ listing.title|truncatechars:20 }}" class="btn btn-sm btn-secondary">Requests</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted);">No listings yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

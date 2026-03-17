@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}My Profile — FlatFinder{% endblock %}
+
+{% block extra_head %}
+<style>
+  .profile-header { background: var(--green-dark); color: white; padding: 3rem 0; }
+  .profile-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.3); }
+  .profile-name { font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 500; }
+  .profile-layout { display: grid; grid-template-columns: 320px 1fr; gap: 2rem; padding: 2rem 0 4rem; }
+  @media (max-width: 900px) { .profile-layout { grid-template-columns: 1fr; } }
+  .card-section { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1rem; }
+  .card-section-title { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 500; margin-bottom: 1.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); }
+  .stat-row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .stat-item { text-align: center; }
+  .stat-num { font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 700; color: var(--green); }
+  .stat-label { font-size: 0.78rem; color: var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+  <div class="container">
+    <div style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap;">
+      <img src="{{ user.get_avatar_url }}" class="profile-avatar" alt="{{ user.username }}">
+      <div>
+        <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>
+        <div style="opacity:0.7; font-size:0.9rem;">@{{ user.username }} · Member since {{ user.created_at|date:"M Y" }}</div>
+        <div style="margin-top:0.8rem;" class="stat-row">
+          <div class="stat-item"><div class="stat-num">{{ user_listings.count }}</div><div class="stat-label">Listings</div></div>
+          <div class="stat-item"><div class="stat-num">{{ user.sent_requests.count }}</div><div class="stat-label">Requests Sent</div></div>
+          <div class="stat-item"><div class="stat-num">{{ user.saved_listings.count }}</div><div class="stat-label">Saved</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="profile-layout">
+    <!-- Left: Edit profile -->
+    <div>
+      <div class="card-section">
+        <div class="card-section-title">✏️ Edit Profile</div>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="form-group">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Save Changes</button>
+        </form>
+      </div>
+
+      <div class="card-section">
+        <div class="card-section-title">Quick Links</div>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+          <a href="{% url 'listings:create' %}" class="btn btn-primary">+ Post New Listing</a>
+          <a href="{% url 'listings:requests' %}" class="btn btn-outline">📩 My Requests</a>
+          <a href="{% url 'listings:saved' %}" class="btn btn-outline">🤍 Saved Listings</a>
+          <a href="{% url 'accounts:logout' %}" class="btn btn-outline" style="color:var(--danger); border-color:var(--danger);">Log Out</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: My listings -->
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+        <h2 style="font-family:'Fraunces',serif; font-size:1.4rem; font-weight:500;">My Listings</h2>
+        <a href="{% url 'listings:create' %}" class="btn btn-primary btn-sm">+ New</a>
+      </div>
+
+      {% if user_listings %}
+        {% for listing in user_listings %}
+        <div class="card" style="display:flex; gap:1rem; padding:1rem; margin-bottom:0.8rem; align-items:center;">
+          <div style="width:80px; height:60px; border-radius:8px; overflow:hidden; background:var(--sand); flex-shrink:0;">
+            {% if listing.images.first %}
+              <img src="{{ listing.images.first.image.url }}" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}
+              <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🏠</div>
+            {% endif %}
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ listing.title }}</div>
+            <div style="font-size:0.82rem; color:var(--muted);">{{ listing.city }} · ₦{{ listing.monthly_rent|floatformat:0 }}/mo</div>
+            <div style="margin-top:0.3rem;">
+              <span class="badge {% if listing.status == 'available' %}badge-green{% elif listing.status == 'taken' %}badge-red{% else %}badge-orange{% endif %}">
+                {{ listing.get_status_display }}
+              </span>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+            <a href="{{ listing.get_absolute_url }}" class="btn btn-outline btn-sm">View</a>
+            <a href="{% url 'listings:edit' listing.pk %}" class="btn btn-outline btn-sm">Edit</a>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center; padding:3rem; color:var(--muted); background:white; border-radius:var(--radius); border:1px solid var(--border);">
+          <div style="font-size:2.5rem; margin-bottom:0.8rem;">🏡</div>
+          <div style="margin-bottom:1rem;">You haven't posted any listings yet.</div>
+          <a href="{% url 'listings:create' %}" class="btn btn-primary">Post Your First Listing</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('input[type=text], input[type=email], input[type=tel], textarea').forEach(el => {
+  if (!el.classList.contains('form-control')) el.classList.add('form-control');
+});
+</script>
+{% endblock %}

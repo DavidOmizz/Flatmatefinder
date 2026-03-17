@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Post a Listing — FlatFinder{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-header { background: var(--green-dark); color: white; padding: 2.5rem 0; }
+  .page-header h1 { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 500; }
+  .form-wrapper { max-width: 760px; margin: 2.5rem auto 5rem; padding: 0 1.5rem; }
+  .form-section { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.8rem; margin-bottom: 1.2rem; }
+  .form-section-title { font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 500; margin-bottom: 1.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
+  .checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+  @media (max-width: 600px) { .checkbox-grid { grid-template-columns: 1fr 1fr; } }
+  .checkbox-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.7rem; border-radius: 8px; border: 1.5px solid var(--border); cursor: pointer; transition: border-color 0.2s; }
+  .checkbox-item:hover { border-color: var(--green); }
+  .checkbox-item input[type="checkbox"] { accent-color: var(--green); }
+  .image-upload-area { border: 2px dashed var(--border); border-radius: 10px; padding: 2rem; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+  .image-upload-area:hover { border-color: var(--green); }
+  .image-upload-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Post a Listing</h1>
+    <p style="opacity:0.7; margin-top:0.3rem;">Share your space and find the perfect flatmate</p>
+  </div>
+</div>
+
+<div class="form-wrapper">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- Basic Info -->
+    <div class="form-section">
+      <div class="form-section-title">📋 Basic Information</div>
+      <div class="form-group">
+        <label class="form-label">Listing Title *</label>
+        {{ form.title }}
+        {% if form.title.errors %}<ul class="errorlist">{% for e in form.title.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        {{ form.description }}
+        {% if form.description.errors %}<ul class="errorlist">{% for e in form.description.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        <small style="color:var(--muted); font-size:0.78rem;">Describe the space, neighborhood, house rules, and your ideal flatmate.</small>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Status *</label>
+          {{ form.status }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Room Type *</label>
+          {{ form.room_type }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Location -->
+    <div class="form-section">
+      <div class="form-section-title">📍 Location</div>
+      <div class="form-group">
+        <label class="form-label">Street Address *</label>
+        {{ form.address }}
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">City *</label>
+          {{ form.city }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">State *</label>
+          {{ form.state }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Pricing -->
+    <div class="form-section">
+      <div class="form-section-title">💰 Pricing</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Monthly Rent (₦) *</label>
+          {{ form.monthly_rent }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Security Deposit (₦)</label>
+          {{ form.security_deposit }}
+        </div>
+      </div>
+      <div class="form-check">
+        {{ form.utilities_included }}
+        <label for="{{ form.utilities_included.id_for_label }}" class="form-label" style="margin:0;">Utilities included in rent</label>
+      </div>
+    </div>
+
+    <!-- Flatmates -->
+    <div class="form-section">
+      <div class="form-section-title">👥 Flatmate Details</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Current Flatmates</label>
+          {{ form.current_flatmates }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Maximum Flatmates</label>
+          {{ form.max_flatmates }}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Gender Preference</label>
+          {{ form.gender_preference }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Available From *</label>
+          {{ form.available_from }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Property Details -->
+    <div class="form-section">
+      <div class="form-section-title">🏠 Property Details</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Furnished Status</label>
+          {{ form.furnished }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total Rooms</label>
+          {{ form.total_rooms }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Amenities -->
+    <div class="form-section">
+      <div class="form-section-title">✨ Amenities & Rules</div>
+      <div class="checkbox-grid">
+        <label class="checkbox-item">{{ form.has_wifi }} 📶 WiFi</label>
+        <label class="checkbox-item">{{ form.has_ac }} ❄️ Air Con</label>
+        <label class="checkbox-item">{{ form.has_parking }} 🚗 Parking</label>
+        <label class="checkbox-item">{{ form.has_laundry }} 🧺 Laundry</label>
+        <label class="checkbox-item">{{ form.has_gym }} 🏋️ Gym</label>
+        <label class="checkbox-item">{{ form.has_pool }} 🏊 Pool</label>
+        <label class="checkbox-item">{{ form.has_security }} 🔒 Security</label>
+        <label class="checkbox-item">{{ form.pets_allowed }} 🐾 Pets OK</label>
+        <label class="checkbox-item">{{ form.smoking_allowed }} 🚬 Smoking OK</label>
+      </div>
+    </div>
+
+    <!-- Photos -->
+    <div class="form-section">
+      <div class="form-section-title">📸 Photos</div>
+      <div class="image-upload-area">
+        <div class="image-upload-icon">📸</div>
+        <div style="font-weight:600; margin-bottom:0.3rem;">Upload photos of your space</div>
+        <div style="color:var(--muted); font-size:0.85rem; margin-bottom:1rem;">The first photo will be the main listing photo</div>
+        <input type="file" name="images" multiple accept="image/*" style="max-width:300px;">
+      </div>
+    </div>
+
+    <div style="display:flex; gap:1rem; justify-content:flex-end;">
+      <a href="{% url 'listings:list' %}" class="btn btn-outline btn-lg">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-lg">🚀 Post Listing</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Auto-style form inputs
+document.querySelectorAll('input[type=text], input[type=number], input[type=date], input[type=email], textarea, select').forEach(el => {
+  if (!el.classList.contains('form-control')) el.classList.add('form-control');
+});
+</script>
+{% endblock %}

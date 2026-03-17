@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Saved Listings — FlatFinder{% endblock %}
+
+{% block content %}
+<div style="background:var(--green-dark);color:white;padding:2.5rem 0;">
+  <div class="container">
+    <h1 style="font-family:'Fraunces',serif;font-size:2rem;font-weight:500;">Saved Listings</h1>
+  </div>
+</div>
+
+<div class="container" style="padding:2rem 0 4rem;">
+  {% if saved %}
+  <div class="listings-grid">
+    {% for s in saved %}
+    <a href="{{ s.listing.get_absolute_url }}" class="listing-card" style="color:inherit;">
+      <div class="listing-card-img">
+        {% if s.listing.images.first %}
+          <img src="{{ s.listing.images.first.image.url }}" alt="">
+        {% else %}
+          <div class="listing-card-img-placeholder">🏠</div>
+        {% endif %}
+      </div>
+      <div class="listing-card-body">
+        <div class="listing-card-title">{{ s.listing.title }}</div>
+        <div class="listing-card-location">📍 {{ s.listing.city }}</div>
+        <div class="listing-card-price">₦{{ s.listing.monthly_rent|floatformat:0 }}<small>/month</small></div>
+      </div>
+      <div class="listing-card-footer">
+        <span>Saved {{ s.saved_at|date:"d M" }}</span>
+        <span class="badge badge-green">{{ s.listing.get_status_display }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:4rem;color:var(--muted);">
+    <div style="font-size:3rem;margin-bottom:1rem;">🤍</div>
+    <h3 style="font-family:'Fraunces',serif;margin-bottom:0.5rem;">No saved listings yet</h3>
+    <p>Browse listings and click the heart icon to save your favourites.</p>
+    <a href="{% url 'listings:list' %}" class="btn btn-primary" style="margin-top:1rem;">Browse Listings</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

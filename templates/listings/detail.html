@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% block title %}{{ listing.title }} — FlatFinder{% endblock %}
+
+{% block extra_head %}
+<style>
+  .detail-layout { display: grid; grid-template-columns: 1fr 360px; gap: 2.5rem; padding: 2rem 0 4rem; }
+  @media (max-width: 900px) { .detail-layout { grid-template-columns: 1fr; } }
+
+  .gallery { border-radius: var(--radius); overflow: hidden; background: var(--sand); aspect-ratio: 16/9; margin-bottom: 1.5rem; }
+  .gallery img { width: 100%; height: 100%; object-fit: cover; }
+  .gallery-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 5rem; }
+  .thumb-strip { display: flex; gap: 0.5rem; margin-bottom: 2rem; overflow-x: auto; }
+  .thumb { width: 80px; height: 60px; border-radius: 8px; overflow: hidden; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; flex-shrink: 0; }
+  .thumb:hover, .thumb.active { opacity: 1; outline: 2px solid var(--green); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+  .listing-title { font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 500; margin-bottom: 0.5rem; }
+  .listing-location { color: var(--muted); font-size: 0.95rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.4rem; }
+
+  .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin: 1.5rem 0; }
+  .info-item { background: var(--cream); border-radius: 10px; padding: 0.9rem 1rem; }
+  .info-item-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.2rem; }
+  .info-item-value { font-weight: 600; font-size: 0.95rem; }
+
+  .amenities-grid { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1rem 0; }
+
+  .section-label { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.8rem; margin-top: 1.5rem; }
+
+  /* SIDEBAR */
+  .sticky-sidebar { position: sticky; top: 80px; }
+  .price-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1rem; }
+  .price-big { font-family: 'Fraunces', serif; font-size: 2.2rem; font-weight: 700; color: var(--green); }
+  .price-suffix { font-size: 0.9rem; color: var(--muted); font-weight: 400; }
+
+  .host-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1rem; }
+  .host-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+  .host-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+  .host-name { font-weight: 600; }
+  .host-meta { font-size: 0.82rem; color: var(--muted); }
+
+  .contact-box { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; }
+  .contact-box h3 { font-family: 'Fraunces', serif; font-size: 1.1rem; margin-bottom: 1rem; }
+
+  .views-count { font-size: 0.8rem; color: var(--muted); margin-top: 1rem; }
+
+  .similar-section { padding: 2rem 0 4rem; background: var(--sand); }
+  .similar-section .section-title { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 500; margin-bottom: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div style="padding: 1.2rem 0 0;">
+    <a href="{% url 'listings:list' %}" style="color:var(--muted); font-size:0.85rem;">← Back to listings</a>
+  </div>
+
+  <div class="detail-layout">
+    <!-- LEFT: Main content -->
+    <div>
+      <!-- Gallery -->
+      {% if listing.images.all %}
+        <div class="gallery" id="mainGallery">
+          <img src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}" id="mainImg">
+        </div>
+        {% if listing.images.count > 1 %}
+        <div class="thumb-strip">
+          {% for img in listing.images.all %}
+          <div class="thumb {% if forloop.first %}active{% endif %}" onclick="changeImg('{{ img.image.url }}', this)">
+            <img src="{{ img.image.url }}" alt="">
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="gallery">
+          <div class="gallery-placeholder">🏠</div>
+        </div>
+      {% endif %}
+
+      <!-- Title -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <div style="display:flex; gap:0.5rem; margin-bottom:0.6rem; flex-wrap:wrap;">
+            <span class="badge badge-green">{{ listing.get_room_type_display }}</span>
+            <span class="badge {% if listing.status == 'available' %}badge-green{% elif listing.status == 'taken' %}badge-red{% else %}badge-orange{% endif %}">
+              {{ listing.get_status_display }}
+            </span>
+            <span class="badge badge-gray">{{ listing.get_furnished_display }}</span>
+          </div>
+          <h1 class="listing-title">{{ listing.title }}</h1>
+          <div class="listing-location">📍 {{ listing.address }}, {{ listing.city }}, {{ listing.state }}</div>
+        </div>
+        {% if user.is_authenticated %}
+        <form method="post" action="{% url 'listings:save' listing.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline btn-sm" style="{% if is_saved %}border-color:var(--green); color:var(--green);{% endif %}">
+            {% if is_saved %}❤️ Saved{% else %}🤍 Save{% endif %}
+          </button>
+        </form>
+        {% endif %}
+      </div>
+
+      <!-- Info grid -->
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-item-label">Monthly Rent</div>
+          <div class="info-item-value" style="color:var(--green)">₦{{ listing.monthly_rent|floatformat:0 }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">Flatmates</div>
+          <div class="info-item-value">{{ listing.current_flatmates }} / {{ listing.max_flatmates }} people</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">Spots Left</div>
+          <div class="info-item-value">{{ listing.spots_left }} available</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">Available From</div>
+          <div class="info-item-value">{{ listing.available_from|date:"d M Y" }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">Gender Preference</div>
+          <div class="info-item-value">{{ listing.get_gender_preference_display }}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">Deposit</div>
+          <div class="info-item-value">{% if listing.security_deposit %}₦{{ listing.security_deposit|floatformat:0 }}{% else %}Not specified{% endif %}</div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="section-label">About This Space</div>
+      <p style="color:var(--text); line-height:1.7; white-space:pre-line;">{{ listing.description }}</p>
+
+      <!-- Amenities -->
+      <div class="section-label">Amenities</div>
+      <div class="amenities-grid">
+        {% for name, emoji in listing.get_amenities %}
+          <span class="chip">{{ emoji }} {{ name }}</span>
+        {% empty %}
+          <span style="color:var(--muted); font-size:0.9rem;">No amenities listed</span>
+        {% endfor %}
+        {% if listing.smoking_allowed %}<span class="chip">🚬 Smoking OK</span>{% endif %}
+        {% if listing.utilities_included %}<span class="chip">💡 Utilities Included</span>{% endif %}
+      </div>
+
+      <!-- Rules summary -->
+      <div class="section-label">House Rules</div>
+      <div style="display:flex; gap:0.8rem; flex-wrap:wrap;">
+        <span class="chip {% if not listing.smoking_allowed %}badge-red{% endif %}">
+          🚬 Smoking {% if listing.smoking_allowed %}Allowed{% else %}Not Allowed{% endif %}
+        </span>
+        <span class="chip">
+          🐾 Pets {% if listing.pets_allowed %}Welcome{% else %}Not Allowed{% endif %}
+        </span>
+        <span class="chip">
+          👥 {{ listing.get_gender_preference_display }}
+        </span>
+      </div>
+
+      <div class="views-count">👁 {{ listing.views_count }} view{{ listing.views_count|pluralize }}</div>
+    </div>
+
+    <!-- RIGHT: Sidebar -->
+    <div class="sticky-sidebar">
+      <!-- Price Card -->
+      <div class="price-card">
+        <div class="price-big">₦{{ listing.monthly_rent|floatformat:0 }}<span class="price-suffix">/month</span></div>
+        {% if listing.utilities_included %}<div style="color:var(--green); font-size:0.85rem; margin-top:0.3rem;">✅ Utilities included</div>{% endif %}
+        {% if listing.security_deposit %}<div style="color:var(--muted); font-size:0.85rem; margin-top:0.3rem;">🔐 ₦{{ listing.security_deposit|floatformat:0 }} deposit</div>{% endif %}
+        <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); font-size:0.85rem; color:var(--muted);">
+          <div>📅 Available from {{ listing.available_from|date:"d M Y" }}</div>
+          <div style="margin-top:0.3rem;">👥 {{ listing.spots_left }} spot{{ listing.spots_left|pluralize }} remaining</div>
+        </div>
+      </div>
+
+      <!-- Host card -->
+      <div class="host-card">
+        <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:0.8rem;">Listed by</div>
+        <div class="host-header">
+          <img src="{{ listing.host.get_avatar_url }}" class="host-avatar" alt="{{ listing.host }}">
+          <div>
+            <div class="host-name">{{ listing.host.get_full_name|default:listing.host.username }}</div>
+            <div class="host-meta">Member since {{ listing.host.created_at|date:"M Y" }}</div>
+          </div>
+        </div>
+        {% if listing.host.bio %}<p style="font-size:0.85rem; color:var(--muted);">{{ listing.host.bio }}</p>{% endif %}
+      </div>
+
+      <!-- Contact / Request -->
+      <div class="contact-box">
+        {% if not user.is_authenticated %}
+          <h3>Interested in this space?</h3>
+          <p style="color:var(--muted); font-size:0.85rem; margin-bottom:1rem;">Log in to send the host a message.</p>
+          <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-primary" style="width:100%; justify-content:center;">Log in to Contact</a>
+          <div style="text-align:center; margin-top:0.8rem; font-size:0.82rem; color:var(--muted);">No account? <a href="{% url 'accounts:register' %}" style="color:var(--green);">Sign up free</a></div>
+
+        {% elif user == listing.host %}
+          <h3>Your Listing</h3>
+          <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            <a href="{% url 'listings:edit' listing.pk %}" class="btn btn-outline" style="justify-content:center;">✏️ Edit Listing</a>
+            <a href="{% url 'listings:requests' %}" class="btn btn-primary" style="justify-content:center;">📩 View Requests</a>
+            <a href="{% url 'listings:delete' listing.pk %}" class="btn btn-danger" style="justify-content:center; font-size:0.82rem;">🗑 Delete Listing</a>
+          </div>
+
+        {% elif user_has_requested %}
+          <h3>Request Submitted ✅</h3>
+          <p style="color:var(--muted); font-size:0.85rem;">Your request is with our team. We'll review it and reach out to you shortly to connect you with the host.</p>
+          <a href="{% url 'listings:requests' %}" class="btn btn-outline" style="width:100%; justify-content:center; margin-top:0.8rem;">Track My Requests →</a>
+
+        {% elif listing.status != 'available' %}
+          <h3>Not Available</h3>
+          <p style="color:var(--muted); font-size:0.85rem;">This listing is currently {{ listing.get_status_display|lower }}.</p>
+
+        {% else %}
+          <h3>Send a Request</h3>
+          <p style="color:var(--muted); font-size:0.82rem; margin-bottom:1rem; background:var(--cream); padding:0.7rem; border-radius:8px;">
+            📋 Submit your request and our team will review it, verify the listing, and connect you with the host directly.
+          </p>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="contact" value="1">
+            <div class="form-group">
+              <textarea name="message" class="form-control" rows="4" placeholder="Introduce yourself — your name, work, lifestyle, and why this listing suits you..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Submit Request 📩</button>
+          </form>
+          <div style="text-align:center;margin-top:0.7rem;font-size:0.78rem;color:var(--muted);">Our team will reach out to you once your request is reviewed.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SIMILAR LISTINGS -->
+{% if similar %}
+<div class="similar-section">
+  <div class="container">
+    <div class="section-title">More in {{ listing.city }}</div>
+    <div class="listings-grid">
+      {% for s in similar %}
+      <a href="{{ s.get_absolute_url }}" class="listing-card" style="color:inherit;">
+        <div class="listing-card-img">
+          {% if s.images.first %}<img src="{{ s.images.first.image.url }}" alt="">
+          {% else %}<div class="listing-card-img-placeholder">🏠</div>{% endif %}
+        </div>
+        <div class="listing-card-body">
+          <div class="listing-card-title">{{ s.title }}</div>
+          <div class="listing-card-location">📍 {{ s.city }}</div>
+          <div class="listing-card-price">₦{{ s.monthly_rent|floatformat:0 }}<small>/month</small></div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function changeImg(url, el) {
+  document.getElementById('mainImg').src = url;
+  document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+{% endblock %}

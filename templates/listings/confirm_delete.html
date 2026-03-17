@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Delete Listing — FlatFinder{% endblock %}
+{% block content %}
+<div class="container" style="max-width:500px; padding:4rem 1.5rem; text-align:center;">
+  <div style="font-size:3rem; margin-bottom:1rem;">🗑️</div>
+  <h2 style="font-family:'Fraunces',serif; margin-bottom:0.5rem;">Delete this listing?</h2>
+  <p style="color:var(--muted); margin-bottom:2rem;">
+    "<strong>{{ listing.title }}</strong>" will be permanently removed along with all its images and contact requests.
+  </p>
+  <form method="post" style="display:flex; gap:1rem; justify-content:center;">
+    {% csrf_token %}
+    <a href="{{ listing.get_absolute_url }}" class="btn btn-outline btn-lg">Cancel</a>
+    <button type="submit" class="btn btn-danger btn-lg">Yes, Delete</button>
+  </form>
+</div>
+{% endblock %}

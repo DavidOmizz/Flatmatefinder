@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}FlatFinder — Find Your Perfect Flatmate{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #1a6b3c;
+      --green-light: #2d8a54;
+      --green-pale: #e8f5ee;
+      --green-dark: #0f4025;
+      --cream: #f9f6f0;
+      --sand: #ede8df;
+      --text: #1c1c1c;
+      --muted: #6b7280;
+      --border: #e0dbd3;
+      --white: #ffffff;
+      --danger: #e53e3e;
+      --warning: #d97706;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    h1, h2, h3, .brand { font-family: 'Fraunces', serif; }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* NAV */
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0 2rem;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-brand {
+      font-family: 'Fraunces', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-brand span { color: var(--text); }
+
+    .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+
+    .nav-links a {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--green); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--green-light); transform: translateY(-1px); }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover { border-color: var(--green); color: var(--green); }
+
+    .btn-sm { padding: 0.4rem 0.9rem; font-size: 0.82rem; }
+    .btn-lg { padding: 0.85rem 1.8rem; font-size: 1rem; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #c53030; }
+
+    /* CONTAINER */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* MESSAGES */
+    .messages-wrapper { max-width: 1200px; margin: 1rem auto; padding: 0 1.5rem; }
+    .alert {
+      padding: 0.8rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+    .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .alert-info { background: #e0f2fe; color: #0c4a6e; border: 1px solid #bae6fd; }
+
+    /* BADGE */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.7rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-green { background: var(--green-pale); color: var(--green); }
+    .badge-orange { background: #fef3c7; color: #92400e; }
+    .badge-gray { background: var(--sand); color: var(--muted); }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+
+    /* CARD */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    /* LISTING CARD */
+    .listing-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: all 0.25s;
+      display: flex;
+      flex-direction: column;
+    }
+    .listing-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-3px);
+    }
+    .listing-card-img {
+      aspect-ratio: 16/10;
+      background: var(--sand);
+      overflow: hidden;
+      position: relative;
+    }
+    .listing-card-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s;
+    }
+    .listing-card:hover .listing-card-img img { transform: scale(1.04); }
+    .listing-card-img-placeholder {
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      background: linear-gradient(135deg, var(--sand), var(--border));
+    }
+    .listing-card-body { padding: 1rem 1.2rem; flex: 1; display: flex; flex-direction: column; }
+    .listing-card-title {
+      font-family: 'Fraunces', serif;
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 0.3rem;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .listing-card-location { color: var(--muted); font-size: 0.82rem; margin-bottom: 0.7rem; }
+    .listing-card-price {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--green);
+      margin-top: auto;
+    }
+    .listing-card-price small { font-size: 0.75rem; color: var(--muted); font-weight: 400; }
+    .listing-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1.2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* GRID */
+    .listings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* FORMS */
+    .form-group { margin-bottom: 1.2rem; }
+    .form-label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text); }
+    .form-control {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--white);
+      color: var(--text);
+      transition: border-color 0.2s;
+      appearance: none;
+    }
+    .form-control:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,107,60,0.08); }
+    .form-control::placeholder { color: #aaa; }
+    select.form-control { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; }
+    textarea.form-control { resize: vertical; }
+
+    .form-check { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .form-check input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--green); }
+    .form-check label { font-size: 0.9rem; cursor: pointer; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .errorlist { list-style: none; margin-top: 0.3rem; }
+    .errorlist li { color: var(--danger); font-size: 0.8rem; }
+
+    /* SECTION */
+    .section { padding: 4rem 0; }
+    .section-title { font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 500; margin-bottom: 0.5rem; }
+    .section-subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    /* FOOTER */
+    footer {
+      background: var(--green-dark);
+      color: rgba(255,255,255,0.7);
+      padding: 3rem 0 1.5rem;
+      margin-top: 5rem;
+    }
+    .footer-inner { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+    .footer-brand { font-family: 'Fraunces', serif; font-size: 1.5rem; color: white; margin-bottom: 0.5rem; }
+    .footer-tagline { font-size: 0.85rem; margin-bottom: 2rem; }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); margin-top: 2rem; padding-top: 1rem; font-size: 0.8rem; text-align: center; }
+
+    /* AVATAR */
+    .avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+
+    /* CHIP */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.8rem;
+      background: var(--green-pale);
+      color: var(--green-dark);
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 500;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .form-row { grid-template-columns: 1fr; }
+      .nav-links .hide-mobile { display: none; }
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="{% url 'listings:home' %}" class="nav-brand">🏠 Flat<span>Finder</span></a>
+      <div class="nav-links">
+        <a href="{% url 'listings:list' %}" class="hide-mobile">Browse Listings</a>
+        {% if user.is_authenticated %}
+          {% if user.is_staff or user.is_superuser %}
+          <a href="{% url 'dashboard:home' %}" class="btn btn-outline btn-sm hide-mobile" style="border-color:#10b981;color:#10b981;">⚙️ Admin</a>
+          {% endif %}
+          <a href="{% url 'listings:requests' %}" class="hide-mobile">My Requests</a>
+          <a href="{% url 'listings:saved' %}" class="hide-mobile">Saved</a>
+          <a href="{% url 'listings:create' %}" class="btn btn-outline btn-sm">+ Post Listing</a>
+          <a href="{% url 'accounts:profile' %}">
+            <img src="{{ user.get_avatar_url }}" class="avatar" alt="{{ user.username }}">
+          </a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="hide-mobile">Log in</a>
+          <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">Sign up</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  {% if messages %}
+  <div class="messages-wrapper">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}">
+        {% if message.tags == 'success' %}✅{% elif message.tags == 'error' %}❌{% elif message.tags == 'warning' %}⚠️{% else %}ℹ️{% endif %}
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">🏠 FlatFinder</div>
+      <div class="footer-tagline">Connecting people who share spaces.</div>
+      <div class="footer-bottom">© 2025 FlatFinder MVP. Built with Django.</div>
+    </div>
+  </footer>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}My Requests — FlatFinder{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-header { background: var(--green-dark); color: white; padding: 2.5rem 0; }
+  .page-header h1 { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 500; }
+  .request-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); padding: 1.2rem 1.5rem; margin-bottom: 1rem; display: flex; gap: 1.2rem; align-items: flex-start; }
+  .status-steps { display: flex; gap: 0; margin-top: 0.8rem; }
+  .step { flex: 1; text-align: center; font-size: 0.7rem; font-weight: 600; padding: 0.4rem; position: relative; }
+  .step::after { content: ''; position: absolute; top: 50%; right: -1px; transform: translateY(-50%); width: 2px; height: 60%; background: var(--border); }
+  .step:last-child::after { display: none; }
+  .step.done { color: var(--green); background: var(--green-pale); border-radius: 4px; }
+  .step.active { color: white; background: var(--green); border-radius: 4px; }
+  .step.inactive { color: var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>My Requests</h1>
+    <p style="opacity:0.7;margin-top:0.3rem;">Track all your flatmate requests</p>
+  </div>
+</div>
+
+<div class="container" style="padding:2rem 0 4rem;">
+  {% if sent %}
+    {% for req in sent %}
+    <div class="request-card">
+      <div style="width:80px;height:60px;border-radius:8px;overflow:hidden;background:var(--sand);flex-shrink:0;">
+        {% if req.listing.images.first %}
+          <img src="{{ req.listing.images.first.image.url }}" style="width:100%;height:100%;object-fit:cover;">
+        {% else %}
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🏠</div>
+        {% endif %}
+      </div>
+
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;">
+          <div>
+            <div style="font-weight:600;font-size:1rem;">
+              <a href="{{ req.listing.get_absolute_url }}" style="color:var(--green);">{{ req.listing.title }}</a>
+            </div>
+            <div style="color:var(--muted);font-size:0.82rem;">📍 {{ req.listing.city }} · ₦{{ req.listing.monthly_rent|floatformat:0 }}/month</div>
+          </div>
+          <span class="badge
+            {% if req.status == 'connected' %}badge-green
+            {% elif req.status == 'declined' %}badge-red
+            {% elif req.status == 'reviewing' %}badge-orange
+            {% else %}badge-gray{% endif %}">
+            {% if req.status == 'pending' %}⏳ Submitted — Under Review
+            {% elif req.status == 'reviewing' %}🔍 Being Reviewed
+            {% elif req.status == 'connected' %}✅ Connected!
+            {% elif req.status == 'closed' %}🔒 Closed
+            {% elif req.status == 'declined' %}✗ Declined
+            {% endif %}
+          </span>
+        </div>
+
+        <!-- Progress steps -->
+        <div class="status-steps">
+          <div class="step {% if req.status in 'pending,reviewing,connected,closed' %}done{% endif %}">Submitted</div>
+          <div class="step {% if req.status == 'reviewing' %}active{% elif req.status in 'connected,closed' %}done{% endif %}">Under Review</div>
+          <div class="step {% if req.status == 'connected' %}active{% elif req.status == 'closed' %}done{% endif %}">Connected</div>
+          <div class="step {% if req.status == 'closed' %}done{% endif %}">Done</div>
+        </div>
+
+        {% if req.status == 'pending' %}
+        <div style="margin-top:0.6rem;font-size:0.82rem;color:var(--muted);background:var(--cream);padding:0.5rem 0.8rem;border-radius:6px;">
+          📋 Our team has received your request and will review it shortly. We'll reach out to you directly.
+        </div>
+        {% elif req.status == 'reviewing' %}
+        <div style="margin-top:0.6rem;font-size:0.82rem;color:#92400e;background:#fef3c7;padding:0.5rem 0.8rem;border-radius:6px;">
+          🔍 Our team is currently reviewing your request. Expect to hear from us very soon.
+        </div>
+        {% elif req.status == 'connected' %}
+        <div style="margin-top:0.6rem;font-size:0.82rem;color:var(--green-dark);background:var(--green-pale);padding:0.5rem 0.8rem;border-radius:6px;">
+          ✅ <strong>You've been connected!</strong> Our team will share the host's contact details with you. Check your phone and email.
+        </div>
+        {% elif req.status == 'declined' %}
+        <div style="margin-top:0.6rem;font-size:0.82rem;color:#991b1b;background:#fee2e2;padding:0.5rem 0.8rem;border-radius:6px;">
+          Unfortunately this request didn't work out. Try browsing other listings!
+        </div>
+        {% endif %}
+
+        <div style="margin-top:0.5rem;font-size:0.75rem;color:var(--muted);">Submitted {{ req.created_at|date:"d M Y, H:i" }}</div>
+      </div>
+    </div>
+    {% endfor %}
+
+  {% else %}
+  <div style="text-align:center;padding:4rem;color:var(--muted);">
+    <div style="font-size:3rem;margin-bottom:1rem;">📤</div>
+    <h3 style="font-family:'Fraunces',serif;margin-bottom:0.5rem;">No requests yet</h3>
+    <p>Browse listings and send a request when you find a space you like.</p>
+    <a href="{% url 'listings:list' %}" class="btn btn-primary" style="margin-top:1rem;">Browse Listings</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
