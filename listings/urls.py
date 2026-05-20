@@ -13,4 +13,5 @@ urlpatterns = [
     path('listings/<int:pk>/save/', views.toggle_save, name='save'),
     path('my-requests/', views.my_requests, name='requests'),
     path('saved/', views.saved_listings, name='saved'),
+    path('pings/', views.pings, name='pings'),
 ]

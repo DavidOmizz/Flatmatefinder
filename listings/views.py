@@ -7,6 +7,9 @@ from .models import Listing, ListingImage, ContactRequest, SavedListing
 from .forms import ListingForm, ContactForm, SearchForm
 
 
+def pings(request):
+    return JsonResponse({'message': 'pong'})
+
 def home(request):
     featured = Listing.objects.filter(status='available').order_by('-views_count')[:6]
     latest = Listing.objects.filter(status='available').order_by('-created_at')[:4]
